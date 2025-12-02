@@ -12,11 +12,11 @@ from typing import List, Dict
 DELTA_T = 500  # Base movement duration in milliseconds: to quickly change movement pace for all movements, so they stay proportional to e.o.
 
 arms_up = [
-    {"time": 800,"data": {"body.arms.right.upper.pitch": -1.5, "body.arms.left.upper.pitch": -1.5,},},
+    {"time": 800,"data": {"body.arms.right.upper.pitch": -1.5, "body.arms.left.upper.pitch": -1.5}}
 ]
 
 arms_down = [
-    {"time": 200,"data": {"body.arms.right.upper.pitch": -1,"body.arms.left.upper.pitch": -1,},},
+    {"time": 200,"data": {"body.arms.right.upper.pitch": -1,"body.arms.left.upper.pitch": -1}}
 ]
 # Head goes up and down with both arms going up a bit beyond normal stand and then a bit lower than normal stand. Lower arms go a little in and out.
 # Every gesture ends in the normal stand

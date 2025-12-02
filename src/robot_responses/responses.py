@@ -7,11 +7,12 @@ from alpha_mini_rug import perform_movement
 import random
 @inlineCallbacks
 def say_practice_sentence(session, sentence: str):
-    #yield session.call("rie.dialogue.config.language", lang="nl")
-    #yield perform_movement(session, frames = arms_up, mode="linear", force=True)
+    return
+    yield session.call("rie.dialogue.config.language", lang="nl")
+    yield perform_movement(session, frames = arms_up, mode="linear", force=True)
     sentence_parts = sentence.split("_")
     yield session.call("rie.dialogue.say", sentence_parts[0])
-    #yield perform_movement(session, frames = arms_down, mode="linear", force=True)
+    yield perform_movement(session, frames = arms_down, mode="linear", force=True)
     #yield perform_movement(session=session, frames=frames, force=True)
     yield session.call("rie.dialogue.say", sentence_parts[1])
 
@@ -28,16 +29,25 @@ def respond_to_correct_answer(session, correct_sentence, correct_pronoun):
 
 def respond_to_wrong_answer(session):
     sad_sentences = [
-        "Helaas! "
+        "Helaas! Dat was het verkeerde antwoord. Maar we kunnen het nog een keer proberen!"
     ]
-
+    yield say_normally(session, random.choice(sad_sentences))
     return
 
 def respond_to_wrong_answer_and_give_correct(session, correct_sentence, correct_pronoun):
+    sad_sentences = [
+        "Helaas! Dat was het verkeerde antwoord. Het juiste antwoord was:"
+    ]
+
+    full_sentence = correct_sentence.replace("_", correct_pronoun)
+    sentence = full_sentence.split(".")[1]
+    response = random.choice(sad_sentences) + correct_pronoun + sentence
+    yield say_normally(session, response)
     return
 
 def say_normally(session, text: str):
     yield session.call("rie.dialogue.say", text)
+    return
 
 if __name__ == "__main__":
     say_practice_sentence(0, "De computer is van _")

@@ -2,42 +2,14 @@ from autobahn.twisted.component import Component,run
 from twisted.internet.defer import inlineCallbacks
 from autobahn.twisted.util import sleep
 from alpha_mini_rug import perform_movement
+from src.robot_movements.gesture_library import arms_up, arms_down, head_nod_with_arms
+from src.robot_responses.responses import say_practice_sentence
 @inlineCallbacks
 def main(session, details):
-    frames = [
-
-        {
-
-            "time": 800,
-
-            "data": {
-
-                "body.arms.right.upper.pitch": -1.7,
-
-                "body.arms.left.upper.pitch": -1.7,
-
-            },
-
-        },
-
-        {
-
-            "time": 1600,
-
-            "data": {
-
-                "body.arms.right.upper.pitch": 0.5,
-
-                "body.arms.left.upper.pitch": 0.5,
-
-            },
-
-        },
-    ]
-    session.call("rie.dialogue.say", text="Hallo ouders! Ik ben de Alpha Mini Robot voor het onderzoek. Aangenaam kennis te maken!", lang="nl")
-    yield session.call("rom.optional.behavior.play", name="BlocklyCrouch")
-    yield perform_movement(session, frames = frames, force=True)
-    #yield session.call("rom.optional.behavior.play", name="BlocklyHappy")
+    yield session.call("rom.optional.behavior.play", name="BlocklyStand")
+    yield perform_movement(session, head_nod_with_arms)
+    yield say_practice_sentence(session, "Hij _ iets")
+    yield sleep(5)
     session.leave() # Close the connection with the robot
 
 # Create wamp connection
@@ -46,7 +18,7 @@ wamp = Component(
         "url": "ws://wamp.robotsindeklas.nl",
         "serializers": ["msgpack"]
     }],
-    realm="rie.69297d8f82c3bec9b227217a",
+    realm="rie.692eba7aa7cba444073b5b64",
 )
 wamp.on_join(main)
 if __name__ == "__main__":

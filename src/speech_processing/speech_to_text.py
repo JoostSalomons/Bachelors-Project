@@ -30,6 +30,7 @@ class SpeechToText:
         self.chunk_size = chunk_size
         self.device_index = device_index
         self.mic_util = MicUtil()
+        self.extra_frames = 100
 
     def choose_mic(self) -> Dict[str, int | str]:
         """
@@ -133,7 +134,7 @@ class SpeechToText:
         audio_path = self.save_audio(frames, output_filename)
         return audio_path
 
-    def trim_silence(self, audio_path: str, silence_thresh: int = -40, min_silence_len: int = 500) -> Optional[str]:
+    def trim_silence(self, audio_path: str, silence_thresh: int = -30, min_silence_len: int = 500) -> Optional[str]:
         """
         Removes silent segments from the beginning and end of an audio file.
         Without this function, the transcription transcribes random
@@ -154,12 +155,12 @@ class SpeechToText:
         """
         audio = AudioSegment.from_wav(audio_path)
         non_silent_chunks = detect_nonsilent(audio, min_silence_len=min_silence_len, silence_thresh=silence_thresh)
-
+        print(non_silent_chunks)
         if not non_silent_chunks:
             return None
 
-        start_trim = non_silent_chunks[0][0]
-        end_trim = non_silent_chunks[-1][1]
+        start_trim = non_silent_chunks[0][0] - self.extra_frames
+        end_trim = non_silent_chunks[-1][1] + self.extra_frames
 
         trimmed_audio = audio[start_trim:end_trim]
         trimmed_audio.export(audio_path, format="wav")

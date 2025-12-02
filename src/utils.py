@@ -102,3 +102,56 @@ def generate_message_using_llm(original_prompt: str) -> str:
 
         else:
             return response.lower()
+
+def generate_conversation_using_llm(original_prompt: str, conversation) -> str:
+    """
+    Generates a message based on a given prompt using OpenAI's GPT-3.5 and
+    ensures no profanity is included. Also ensures the language is safe
+    and appropriate for children.
+
+    Args:
+        original_prompt (str): The initial prompt to send to the OpenAI API.
+
+    Returns:
+        str: A generated response from the OpenAI API, in lowercase, with no
+        profanity.
+
+    Raises:
+        RuntimeError: If the LLM response is empty.
+    """
+    prompt = original_prompt
+    avoided_words = []
+    system_prompt = (
+        "Je bent een vriendelijke, educatieve robot die spreekt tegen kinderen van 7-10 jaar "
+        "Houd jouw taalgebruik leuk, veilig en simpel en gebruik nooit ongepaste of enge tekst "
+    )
+
+    while True:
+        completion = client.responses.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            conversation=conversation
+        )
+
+        if not completion.choices:
+            raise RuntimeError("LLM response is empty.")
+
+        response = completion.choices[0].message.content.strip()
+
+        profanity = check_profanity(response)
+
+        if profanity and profanity.get("profanity", {}).get("matches"):
+            matches = profanity["profanity"]["matches"]
+            new_words = [match["match"] for match in matches if match["match"] not in avoided_words]
+
+            if new_words:
+                avoided_words.extend(new_words)
+                avoided_words_str = ", ".join(avoided_words)
+                print(avoided_words_str)
+                prompt = original_prompt + f" Do not use the word(s): '{avoided_words_str}'."
+
+        else:
+            return response.lower()

@@ -4,11 +4,13 @@ from twisted.internet.defer import inlineCallbacks, returnValue
 from autobahn.twisted.util import sleep
 # from src.robot_movements.say_animated import say_animated
 from src.utils import generate_message_using_llm
+from alpha_mini_rug import perform_movement
 from src.speech_processing.speech_session import SpeechRecognitionSession
 from src.pronoun_game.llm_interface import LLMGameHelper
 from src.pronoun_game.acuro_card_recognition import aruco_scan,aruco_scan_specific_card
 from src.robot_responses.responses import say_practice_sentence, respond_to_correct_answer,\
     respond_to_wrong_answer, respond_to_wrong_answer_and_give_correct, say_normally
+from src.robot_movements.gesture_library import arms_up, arms_down
 import random
 
 MAX_ATTEMPTS_ARUCO = 2
@@ -28,7 +30,7 @@ class PronounGame:
                                    "Ik moet de achterkant van de kaart scannen.")
         attempts = 1
         while attempts <= MAX_ATTEMPTS_ARUCO:
-            card_scanned = aruco_scan_specific_card(self.session, practice_card)
+            card_scanned = yield aruco_scan_specific_card(self.session, practice_card)
             if card_scanned == practice_card:
                 yield say_normally(self.session, "Goed gedaan! Dat was inderdaad de kaart die ik zocht.")
                 return False
@@ -40,28 +42,28 @@ class PronounGame:
                 yield say_normally(self.session, "Oeps! Ik heb per ongeluk een andere kaart gescand. Let erop dat alle"
                                            "kaarten die je niet gebruikt met het plaatje naar boven liggen en probeer het"
                                            "dan opnieuw. De instructeur zal je helpen")
-                yield sleep(10)
                 attempts += 1
 
     @inlineCallbacks
     def try_speech_to_text(self) -> None:
-        yield say_normally("We gaan eerst oefenen met heen en weer praten. Je kan pas terugpraten als"
-                           "ik klaar ben met praten. Je moet luid en duidelijk praten zodat ik je kan horen."
-                           "Zeg nu bijvoorbeeld maar: Hij")
+        yield say_normally(self.session, "We gaan eerst oefenen met heen en weer praten. Je kan pas terugpraten als"
+                           "ik klaar ben met praten. Je moet luid en duidelijk praten zodat ik je kan horen"
+                           " Zeg nu bijvoorbeeld maar: Hij")
         correct = False
         attempts = 1
         while attempts <= MAX_ATTEMPTS_SPEECH:
             user_input = yield self.speech_recognition_session.recognize_speech()
             correct = self.game_helper.check_answer(user_input, 'hij')
             if correct:
+                yield say_normally(self.session,"Goed gedaan! Het is gelukt")
                 return
             else:
-                yield say_normally("Ik kon je nu niet goed verstaan. Probeer luid en duidelijk te praten. Dan kan ik"
-                                   "het verstaan. Probeer opnieuw om hij te zeggen")
+                yield say_normally(self.session, "Ik kon je nu niet goed verstaan. Probeer luid en duidelijk te praten."
+                                                 " Dan kan ik het verstaan. Probeer opnieuw om hij te zeggen")
         return
 
     def practice_sentences(self, card) -> Dict:
-        possible_indices_sentences = [1, 3, 5, 7, 9]
+        possible_indices_sentences = [1, 3, 5]
         picked_sentences = random.sample(possible_indices_sentences, 1)
         round_data = {
             "wrong_guesses": 0,
@@ -79,6 +81,7 @@ class PronounGame:
                 yield say_practice_sentence(self.session, selected_sentence)
                 user_input = yield self.speech_recognition_session.recognize_speech()
                 correct = self.game_helper.check_answer(user_input, correct_answer)
+                return round_data
                 if correct:
                     yield respond_to_correct_answer(self.session, selected_sentence, correct_answer)
                 else:
@@ -98,28 +101,41 @@ class PronounGame:
         #Say hello
 
         #Practice text to speech
-        self.try_speech_to_text()
+        #yield self.try_speech_to_text()
 
         #Practice aruco reading
-        skip_aruco = self.try_aruco_reading()
+        skip_aruco=False
+        #skip_aruco = yield self.try_aruco_reading()
 
-        # yield perform_movement(session, frames = arms_up, mode="linear", force=True)
-        yield say_normally("Nu gaan we oefenen met de kaarten. Ik vertel je iets over het plaatje. Jij zegt het woord"
-                           "dat op de lege plek hoort. Bij de lege plek doe ik mijn armen zo")
-        # yield perform_movement(session, frames = arms_down, mode="linear", force=True)
-        yield say_normally("naar beneden. Laten we het proberen met de kaart die je net hebt gepakt!")
-        yield say_practice_sentence(self.session, selected_sentence=1)
+        #Practice with card reading
+        # yield perform_movement(self.session, frames = arms_up, mode="linear", force=True)
+        # yield say_normally(self.session,"Nu gaan we oefenen met de kaarten. Ik vertel je iets over het plaatje. Jij zegt het woord"
+        #                    "dat op de lege plek hoort. Bij de lege plek doe ik mijn armen zo")
+        # yield perform_movement(self.session, frames = arms_down, mode="linear", force=True)
+        # yield say_normally(self.session, "naar beneden. Laten we het proberen met de kaart die je net hebt gepakt!")
+        # _ = yield self.practice_sentences(card=0)
 
-        # Pick a card
-        card = 0
-        #card = yield aruco_scan(self.session)
-        while card is None:
-            yield self.session.call("rie.dialogue.say", text="Probeer opnieuw", lang="nl")
-            card = yield aruco_scan(self.session)
-        print(6)
-        print("Picked card"+ str(card))
+        # Regular loop
+        round_data = yield self.practice_sentences(1)
+        # yield say_normally(self.session, "We gaan nu oefenen met andere kaarten. Kies maar een kaart om te oefenen en"
+        #                                  " scan hem voor mijn hoofd.")
+        # for i in range (5):
+        #     if skip_aruco:
+        #         card = 0
+        #     else:
+        #         card = 0
+        #         yield say_normally(self.session, "Ik scan nu naar kaarten")
+        #         card = yield aruco_scan(self.session)
+        #         while card is None:
+        #             yield self.session.call("rie.dialogue.say", text="Probeer opnieuw", lang="nl")
+        #             card = yield aruco_scan(self.session)
+        #     # Practice sentences
+        #     print("Picked card: " + str(card))
+        #     yield say_normally(self.session, "Ik heb kaart" + str(card) + "gescand. Laten we daarmee gaan oefenen!")
+        #     round_data = yield self.practice_sentences(card)
 
-        #Practice sentences
-        round_data = self.practice_sentences(card)
+
+
+
 
         return
