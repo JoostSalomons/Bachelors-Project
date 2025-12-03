@@ -129,17 +129,17 @@ def generate_conversation_using_llm(original_prompt: str, conversation) -> str:
     while True:
         completion = client.responses.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}
-            ],
+            input=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
             conversation=conversation
         )
 
-        if not completion.choices:
+        if not completion.output_text:
             raise RuntimeError("LLM response is empty.")
-
-        response = completion.choices[0].message.content.strip()
+        print(completion.output_text)
+        response = completion.output_text.strip()
 
         profanity = check_profanity(response)
 

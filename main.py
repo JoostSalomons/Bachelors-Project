@@ -22,9 +22,9 @@ def main(session, details): #session, details as args
 
     # #Practice stuff
     if VERSION == "experiment":
-        # yield session.call("rie.dialogue.say", "Hallo! Wat leuk dat je meedoet aan dit experiment. We gaan zometeen"
-        #                                        "een aantal oefeningen doen. Laten we eerst proberen of alles werkt."
-        #                                        "Als het niet lukt zal de onderzoeker je helpen.")
+        yield session.call("rie.dialogue.say", "Hallo! Wat leuk dat je meedoet aan dit experiment. We gaan zometeen"
+                                               "een aantal oefeningen doen. Laten we eerst proberen of alles werkt. "
+                                               "Als het niet lukt zal de onderzoeker je helpen.")
         game = PronounGame(session, VERSION, sentences)
         yield game.pronoun_practice()
     # #Pronoun Game
@@ -41,7 +41,7 @@ wamp = Component(
         "url": "ws://wamp.robotsindeklas.nl",
         "serializers": ["msgpack"]
     }],
-    realm="rie.692eba7aa7cba444073b5b64",
+    realm="rie.693041f3a7cba444073b63c3",
 )
 
 wamp.on_join(main)

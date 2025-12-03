@@ -81,7 +81,6 @@ class PronounGame:
                 yield say_practice_sentence(self.session, selected_sentence)
                 user_input = yield self.speech_recognition_session.recognize_speech()
                 correct = self.game_helper.check_answer(user_input, correct_answer)
-                return round_data
                 if correct:
                     yield respond_to_correct_answer(self.session, selected_sentence, correct_answer)
                 else:
@@ -101,38 +100,38 @@ class PronounGame:
         #Say hello
 
         #Practice text to speech
-        #yield self.try_speech_to_text()
+        # yield self.try_speech_to_text()
 
         #Practice aruco reading
         skip_aruco=False
-        #skip_aruco = yield self.try_aruco_reading()
+        skip_aruco = yield self.try_aruco_reading()
 
         #Practice with card reading
-        # yield perform_movement(self.session, frames = arms_up, mode="linear", force=True)
-        # yield say_normally(self.session,"Nu gaan we oefenen met de kaarten. Ik vertel je iets over het plaatje. Jij zegt het woord"
-        #                    "dat op de lege plek hoort. Bij de lege plek doe ik mijn armen zo")
-        # yield perform_movement(self.session, frames = arms_down, mode="linear", force=True)
-        # yield say_normally(self.session, "naar beneden. Laten we het proberen met de kaart die je net hebt gepakt!")
-        # _ = yield self.practice_sentences(card=0)
+        yield perform_movement(self.session, frames = arms_up, mode="linear", force=True)
+        yield say_normally(self.session,"Nu gaan we oefenen met de kaarten. Ik vertel je iets over het plaatje. Jij zegt het woord"
+                           "dat op de lege plek hoort. Bij de lege plek doe ik mijn armen zo")
+        yield perform_movement(self.session, frames = arms_down, mode="linear", force=True)
+        yield say_normally(self.session, "naar beneden. Laten we het proberen met de kaart die je net hebt gepakt!")
+        _ = yield self.practice_sentences(card=0)
 
         # Regular loop
         round_data = yield self.practice_sentences(1)
-        # yield say_normally(self.session, "We gaan nu oefenen met andere kaarten. Kies maar een kaart om te oefenen en"
-        #                                  " scan hem voor mijn hoofd.")
-        # for i in range (5):
-        #     if skip_aruco:
-        #         card = 0
-        #     else:
-        #         card = 0
-        #         yield say_normally(self.session, "Ik scan nu naar kaarten")
-        #         card = yield aruco_scan(self.session)
-        #         while card is None:
-        #             yield self.session.call("rie.dialogue.say", text="Probeer opnieuw", lang="nl")
-        #             card = yield aruco_scan(self.session)
-        #     # Practice sentences
-        #     print("Picked card: " + str(card))
-        #     yield say_normally(self.session, "Ik heb kaart" + str(card) + "gescand. Laten we daarmee gaan oefenen!")
-        #     round_data = yield self.practice_sentences(card)
+        yield say_normally(self.session, "We gaan nu oefenen met andere kaarten. Kies maar een kaart om te oefenen en"
+                                         " scan hem voor mijn hoofd.")
+        for i in range (5):
+            if skip_aruco:
+                card = 0
+            else:
+                #card = 0
+                yield say_normally(self.session, "Ik scan nu naar kaarten")
+                card = yield aruco_scan(self.session)
+                while card is None:
+                    yield self.session.call("rie.dialogue.say", text="Probeer opnieuw", lang="nl")
+                    card = yield aruco_scan(self.session)
+            # Practice sentences
+            print("Picked card: " + str(card))
+            yield say_normally(self.session, "Ik heb kaart" + str(card) + "gescand. Laten we daarmee gaan oefenen!")
+            round_data = yield self.practice_sentences(card)
 
 
 

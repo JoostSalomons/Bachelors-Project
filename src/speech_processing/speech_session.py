@@ -108,7 +108,6 @@ class SpeechRecognitionSession:
     @inlineCallbacks
     def recognize_speech(self) -> Generator[None, None, Optional[str]]:
         recorded_audio_path = yield self.processor.record_audio()
-
         if recorded_audio_path:
             transcription_result = yield self.processor.process_audio(recorded_audio_path, self.version)
             if transcription_result:

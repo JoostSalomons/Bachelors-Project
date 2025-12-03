@@ -111,7 +111,7 @@ class SpeechToText:
         frames = []
         start_time = time.time()
         last_sound_time = start_time
-
+        speech_detected = False
         while True:
             print("I am recording")
             data = stream.read(self.chunk_size)
@@ -122,9 +122,13 @@ class SpeechToText:
 
             if amplitude > self.silence_threshold:
                 print("Speech detected.")
+                speech_detected = True
                 last_sound_time = time.time()
-            elif time.time() - last_sound_time > 5:  # Kids might speak slower, especially when trying to speak English
-                print("No speech detected, stopping recording.")
+            elif time.time() - last_sound_time > 1 and speech_detected:  # Kids might speak slower, especially when trying to speak English
+                print("Speech has ended, stopping recording.")
+                break
+            elif time.time() - last_sound_time > 2:
+                print("No speech detected at all. Stopped recording")
                 break
 
         stream.stop_stream()
@@ -134,7 +138,7 @@ class SpeechToText:
         audio_path = self.save_audio(frames, output_filename)
         return audio_path
 
-    def trim_silence(self, audio_path: str, silence_thresh: int = -30, min_silence_len: int = 500) -> Optional[str]:
+    def trim_silence(self, audio_path: str, silence_thresh: int = -40, min_silence_len: int = 500) -> Optional[str]:
         """
         Removes silent segments from the beginning and end of an audio file.
         Without this function, the transcription transcribes random
@@ -159,8 +163,8 @@ class SpeechToText:
         if not non_silent_chunks:
             return None
 
-        start_trim = non_silent_chunks[0][0] - self.extra_frames
-        end_trim = non_silent_chunks[-1][1] + self.extra_frames
+        start_trim = non_silent_chunks[0][0] #- self.extra_frames
+        end_trim = non_silent_chunks[-1][1] #+ self.extra_frames
 
         trimmed_audio = audio[start_trim:end_trim]
         trimmed_audio.export(audio_path, format="wav")

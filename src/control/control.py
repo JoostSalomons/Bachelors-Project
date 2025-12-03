@@ -3,7 +3,7 @@ from typing import Generator, Optional, Dict
 from twisted.internet.defer import inlineCallbacks, returnValue
 from autobahn.twisted.util import sleep
 # from src.robot_movements.say_animated import say_animated
-from src.utils import generate_message_using_llm
+from src.utils import generate_message_using_llm, generate_conversation_using_llm
 from alpha_mini_rug import perform_movement
 from src.speech_processing.speech_session import SpeechRecognitionSession
 from src.pronoun_game.llm_interface import LLMGameHelper
@@ -11,6 +11,7 @@ from src.pronoun_game.acuro_card_recognition import aruco_scan,aruco_scan_specif
 from src.robot_responses.responses import say_practice_sentence, respond_to_correct_answer,\
     respond_to_wrong_answer, respond_to_wrong_answer_and_give_correct, say_normally
 from src.robot_movements.gesture_library import arms_up, arms_down
+from src.robot_movements.say_animated import say_animated
 import openai
 import os
 import random
@@ -31,24 +32,31 @@ class ControlExperiment:
         self.conversation = openai.conversations.create()
 
 
-
+    @inlineCallbacks
     def control_experiment(self):
-        start_time = time.time()
+
         time_limit_seconds = 3 * 60
         prompts = [
-            "Stel een vraag die verder gaat met het gesprek"
+            "Stel een vraag die verder gaat met het gesprek",
             "Stel een nieuwe vraag aan een kind van 7-10 jaar"
         ]
-        yield say_normally(self.session, f"Hallo! Ik ben de Alpha Mini robot")
-        yield say_normally(self.session, f"Ik ben een robot. Wat weet jij over robots?")
-        time_limit_responses = 10
+        starting_prompt = generate_conversation_using_llm(f"Zeg het volgende om het gesprek te beginnen: "
+                                                          f"Hallo! Ik ben de Alpha Mini robot. "
+                                                          f"Ik ben een robot. Wat weet jij over robots?",
+                                                          self.conversation.id)
+        #yield say_animated(self.session, starting_prompt)
+        #yield say_animated(self.session, f"De katten krabben de krullen van de trap en ik ben een robot en ik doe "
+                                         # f"dat ook")
+        time_limit_responses = 5
+        start_time = time.time()
         while time.time() - start_time <= time_limit_seconds:
             wait_for_response_time = time.time()
-            while time.time() - wait_for_response_time <= time_limit_responses:
+            while (time.time() - wait_for_response_time <= time_limit_responses) and\
+                    (time.time() - start_time <= time_limit_seconds):
                 user_input = yield self.speech_recognition_session.recognize_speech()
                 if user_input is not None:
-                    prompt = yield generate_conversation_using_llm(user_input,self.conversation)
-                    yield say_normally(self.session, prompt)
+                    prompt = generate_conversation_using_llm(user_input,self.conversation.id)
+                    yield say_animated(self.session, prompt)
                     wait_for_response_time = time.time()
             print("too long response")
             conversation_continuation = random.choice(prompts)

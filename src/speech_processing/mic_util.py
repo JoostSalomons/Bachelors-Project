@@ -56,7 +56,7 @@ class MicUtil:
 
         return available_mics
 
-    def choose_mic_device(self, device_index: int | None = None) -> Dict[str, int | str]:
+    def choose_mic_device(self, device_index: int| None = 1) -> Dict[str, int | str]:
         """
         Chooses a microphone device based on the given index or selects the
         first available microphone if no index is specified.
