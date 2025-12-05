@@ -8,7 +8,7 @@ from src.robot_responses.responses import say_practice_sentence
 def main(session, details):
     yield session.call("rom.optional.behavior.play", name="BlocklyStand")
     yield perform_movement(session, head_nod_with_arms)
-    yield say_practice_sentence(session, "Hij _ iets")
+    #yield say_practice_sentence(session, "Hij _ iets")
     yield sleep(5)
     session.leave() # Close the connection with the robot
 

@@ -2,7 +2,7 @@ import time
 from typing import Generator, Optional, Dict
 from twisted.internet.defer import inlineCallbacks, returnValue
 from autobahn.twisted.util import sleep
-# from src.robot_movements.say_animated import say_animated
+from src.robot_movements.say_animated import say_animated
 from src.utils import generate_message_using_llm
 from alpha_mini_rug import perform_movement
 from src.speech_processing.speech_session import SpeechRecognitionSession
@@ -22,24 +22,33 @@ class PronounGame:
         self.game_helper = LLMGameHelper()
         self.speech_recognition_session = SpeechRecognitionSession(self.session, self.version)
         self.sentences = sentences
+        self.pronouns = ['hij', 'hem', 'zijn', 'zij', 'haar', 'hen', 'hun']
 
     @inlineCallbacks
     def try_aruco_reading(self, practice_card=0):
-        yield say_normally(self.session, "Dan gaan we nu oefenen met het scannen van de kaarten. Kan je de kaart scannen met"
-                                   "een jongen en een computer? Hij heeft het nummer nul op de voorkant staan."
-                                   "Ik moet de achterkant van de kaart scannen.")
+        if practice_card == 0:
+            yield say_animated(self.session, "Dan gaan we nu oefenen met het scannen van de kaarten. Kan je de kaart scannen met"
+                                   "een jongen en een computer? Mijn camera zit bij mijn hoofd. Hij heeft het nummer nul op de "
+                                             "voorkant staan. "
+                                   "Ik moet de achterkant van de kaart scannen. Leg na het scannen de kaart altijd terug"
+                                             "met het plaatje of de tekst naar boven")
         attempts = 1
         while attempts <= MAX_ATTEMPTS_ARUCO:
             card_scanned = yield aruco_scan_specific_card(self.session, practice_card)
             if card_scanned == practice_card:
-                yield say_normally(self.session, "Goed gedaan! Dat was inderdaad de kaart die ik zocht.")
+                yield say_animated(self.session, "Goed gedaan! Dat was inderdaad de kaart die ik zocht.")
                 return False
             elif card_scanned == -1:
-                yield say_normally(self.session, "Helaas! Het was niet gelukt om de kaarten te scannen. Daarom"
+                input = input("Did the child get it correct?: y/n")
+                if input == "y":
+                    yield say_animated(self.session, "Goed gedaan! Dat was inderdaad de kaart die ik zocht.")
+                    return False
+                else:
+                    yield say_animated(self.session, "Helaas! Het was niet gelukt om de kaarten te scannen. Daarom"
                                            "zal ik nu alleen het nummer noemen en dan zoek jij de kaart op!")
-                return True
+                    return True
             else:
-                yield say_normally(self.session, "Oeps! Ik heb per ongeluk een andere kaart gescand. Let erop dat alle"
+                yield say_animated(self.session, "Oeps! Ik heb per ongeluk een andere kaart gescand. Let erop dat alle"
                                            "kaarten die je niet gebruikt met het plaatje naar boven liggen en probeer het"
                                            "dan opnieuw. De instructeur zal je helpen")
                 attempts += 1
@@ -64,7 +73,7 @@ class PronounGame:
 
     def practice_sentences(self, card) -> Dict:
         possible_indices_sentences = [1, 3, 5]
-        picked_sentences = random.sample(possible_indices_sentences, 1)
+        picked_sentences = random.sample(possible_indices_sentences, 3)
         round_data = {
             "wrong_guesses": 0,
             "mistakes": [[]]
@@ -74,25 +83,40 @@ class PronounGame:
             selected_sentence = self.sentences.iloc[card, i]
             correct_answer = self.sentences.iloc[card, i + 1]
             print(selected_sentence)
-
+            skip_sentence = False
             correct = False
             while not correct:
                 # Check sentence
-                yield say_practice_sentence(self.session, selected_sentence)
-                user_input = yield self.speech_recognition_session.recognize_speech()
-                correct = self.game_helper.check_answer(user_input, correct_answer)
+                if not skip_sentence:
+                    yield say_practice_sentence(self.session, selected_sentence)
+                card_scanned = yield aruco_scan(self.session)
+                while card_scanned < 100:
+                    yield say_normally(self.session, "Ik heb per ongeluk een plaatje gescand. Zorg dat alle plaatjes"
+                                                     " omhoog liggen en probeer dan opnieuw")
+                    yield sleep(1)
+                    yield say_practice_sentence(self.session, selected_sentence)
+                    card_scanned = yield aruco_scan(self.session)
+                pronoun_guessed = self.pronouns[card_scanned-100]
+                correct = self.game_helper.check_with_tokenize(pronoun_guessed, correct_answer)
                 if correct:
                     yield respond_to_correct_answer(self.session, selected_sentence, correct_answer)
                 else:
-                    if round_data["wrong_guesses"] == 0:
-                        yield respond_to_wrong_answer(self.session)
-                        round_data["wrong_guesses"] += 1
-                        round_data["mistakes"].append([selected_sentence, correct_answer, user_input])
+                    print("Gegeven antwoord is: " + str(pronoun_guessed) + "\nWat moet ik doen?: opnieuw/goed/fout")
+                    given_input = input()
+                    if given_input == 'opnieuw':
+                        skip_sentence=True
+                    elif given_input == 'goed':
+                        yield respond_to_correct_answer(self.session, selected_sentence, correct_answer)
                     else:
-                        yield respond_to_wrong_answer_and_give_correct(self.session, selected_sentence, correct_answer)
-                        round_data["wrong_guesses"] += 1
-                        round_data["mistakes"].append([selected_sentence, correct_answer, user_input])
-                        correct = True
+                        if round_data["wrong_guesses"] == 0:
+                            yield respond_to_wrong_answer(self.session)
+                            round_data["wrong_guesses"] += 1
+                            round_data["mistakes"].append([selected_sentence, correct_answer, pronoun_guessed])
+                        else:
+                            yield respond_to_wrong_answer_and_give_correct(self.session, selected_sentence, correct_answer)
+                            round_data["wrong_guesses"] += 1
+                            round_data["mistakes"].append([selected_sentence, correct_answer, pronoun_guessed])
+                            correct = True
         return round_data
 
     @inlineCallbacks
@@ -105,32 +129,46 @@ class PronounGame:
         #Practice aruco reading
         skip_aruco=False
         skip_aruco = yield self.try_aruco_reading()
-
+        skip_aruco = False
         #Practice with card reading
         yield perform_movement(self.session, frames = arms_up, mode="linear", force=True)
-        yield say_normally(self.session,"Nu gaan we oefenen met de kaarten. Ik vertel je iets over het plaatje. Jij zegt het woord"
-                           "dat op de lege plek hoort. Bij de lege plek doe ik mijn armen zo")
+        yield say_normally(self.session,"Nu gaan we oefenen met de kaarten. Ik vertel je iets over het plaatje. In "
+                                        "die zin is een lege plek. Bij de lege plek doe ik mijn armen zo")
         yield perform_movement(self.session, frames = arms_down, mode="linear", force=True)
-        yield say_normally(self.session, "naar beneden. Laten we het proberen met de kaart die je net hebt gepakt!")
-        _ = yield self.practice_sentences(card=0)
+        yield say_normally(self.session, "naar beneden. Daarna scan jij de kaart met het woord dat op de lege plek hoort"
+                                         ". "
+                                         " Laten we het proberen met de kaart die je net hebt gepakt! De zin is: ")
+        practice_sentence = self.sentences.iloc[0, 1]
+        print(practice_sentence)
+        yield say_practice_sentence(self.session, practice_sentence)
+        yield say_normally(self.session, "De kaart die ik zoek is: hij")
+        _ = yield self.try_aruco_reading(practice_card=100)
 
         # Regular loop
-        round_data = yield self.practice_sentences(1)
+        #round_data = yield self.practice_sentences(1)
         yield say_normally(self.session, "We gaan nu oefenen met andere kaarten. Kies maar een kaart om te oefenen en"
                                          " scan hem voor mijn hoofd.")
-        for i in range (5):
+        cards_already_done = []
+        for i in range (1, 6):
             if skip_aruco:
                 card = 0
             else:
-                #card = 0
                 yield say_normally(self.session, "Ik scan nu naar kaarten")
                 card = yield aruco_scan(self.session)
-                while card is None:
-                    yield self.session.call("rie.dialogue.say", text="Probeer opnieuw", lang="nl")
+                while card is None or card in cards_already_done or card >= 100:
+                    if card is None:
+                        yield self.session.call("rie.dialogue.say", text="Ik heb niks gevonden "
+                                                                         "Probeer opnieuw", lang="nl")
+                    elif card in cards_already_done:
+                        yield say_normally(self.session, "Die kaart hebben we al geoefend. Probeer opnieuw")
+                    elif card >= 100:
+                        yield say_normally(self.session, "Ik heb per ongeluk een woordkaart gescand. Probeer opnieuw")
                     card = yield aruco_scan(self.session)
             # Practice sentences
             print("Picked card: " + str(card))
             yield say_normally(self.session, "Ik heb kaart" + str(card) + "gescand. Laten we daarmee gaan oefenen!")
+            yield sleep(1)
+            cards_already_done.append(card)
             round_data = yield self.practice_sentences(card)
 
 

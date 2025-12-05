@@ -35,19 +35,19 @@ class ControlExperiment:
     @inlineCallbacks
     def control_experiment(self):
 
-        time_limit_seconds = 3 * 60
+        time_limit_seconds = 4 * 60
         prompts = [
-            "Stel een vraag die verder gaat met het gesprek",
-            "Stel een nieuwe vraag aan een kind van 7-10 jaar"
+            "Het kind heeft niet gereageerd op de vraag. Zeg dat je het niet goed hebt gehoord. Herhaal daarna de vraag "
+            "of stel een nieuwe vraag."
         ]
-        starting_prompt = generate_conversation_using_llm(f"Zeg het volgende om het gesprek te beginnen: "
-                                                          f"Hallo! Ik ben de Alpha Mini robot. "
+        yield say_animated(self.session, "Hallo, ik ben de Alpha Mini robot. We gaan nu een gesprek houden. Als ik"
+                                         " klaar ben met praten moet je even wachten en dan kan je reageren.")
+        starting_prompt = yield generate_conversation_using_llm(f"Zeg het volgende om het gesprek te beginnen: "
                                                           f"Ik ben een robot. Wat weet jij over robots?",
                                                           self.conversation.id)
-        #yield say_animated(self.session, starting_prompt)
-        #yield say_animated(self.session, f"De katten krabben de krullen van de trap en ik ben een robot en ik doe "
-                                         # f"dat ook")
-        time_limit_responses = 5
+        #yield say_animated(self.session, "Hallo. Ik ben de Alpha mini Robot")
+        yield say_animated(self.session, starting_prompt)
+        time_limit_responses = 30
         start_time = time.time()
         while time.time() - start_time <= time_limit_seconds:
             wait_for_response_time = time.time()
@@ -55,10 +55,11 @@ class ControlExperiment:
                     (time.time() - start_time <= time_limit_seconds):
                 user_input = yield self.speech_recognition_session.recognize_speech()
                 if user_input is not None:
-                    prompt = generate_conversation_using_llm(user_input,self.conversation.id)
+                    yield say_animated(self.session, "Bedankt voor jouw antwoord")
+                    prompt = yield generate_conversation_using_llm(user_input,self.conversation.id)
                     yield say_animated(self.session, prompt)
                     wait_for_response_time = time.time()
             print("too long response")
             conversation_continuation = random.choice(prompts)
-
-            yield say_normally(self.session, conversation_continuation)
+            new_message = yield generate_conversation_using_llm(conversation_continuation, self.conversation.id)
+            yield say_animated(self.session, new_message)

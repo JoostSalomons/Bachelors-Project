@@ -51,9 +51,9 @@ head_to_left_with_arms = [
 
 # Both arms go up beyond belly button with lower arms going a bit out.
 arms_up_and_out = [
-    {"time": 0.45*DELTA_T, "data": {"body.arms.left.upper.pitch": -0.57, "body.arms.right.upper.pitch": -0.57, "body.arms.right.lower.roll": -1.0, "body.arms.left.lower.roll": -1.0}},
-    {"time": 1.1*DELTA_T, "data": {"body.arms.left.upper.pitch": -0.45, "body.arms.right.upper.pitch": -0.45, "body.arms.right.lower.roll": -1.15, "body.arms.left.lower.roll": -1.15}},
-    {"time": 1.75*DELTA_T, "data": {"body.arms.left.upper.pitch": -0.4, "body.arms.right.upper.pitch": -0.4, "body.arms.right.lower.roll": -1.0, "body.arms.left.lower.roll": -1.0}}
+    {"time": 0.45, "data": {"body.arms.left.upper.pitch": -0.57, "body.arms.right.upper.pitch": -0.57, "body.arms.right.lower.roll": -1.0, "body.arms.left.lower.roll": -1.0}},
+    {"time": 1.1, "data": {"body.arms.left.upper.pitch": -0.45, "body.arms.right.upper.pitch": -0.45, "body.arms.right.lower.roll": -1.15, "body.arms.left.lower.roll": -1.15}},
+    {"time": 1.75, "data": {"body.arms.left.upper.pitch": -0.4, "body.arms.right.upper.pitch": -0.4, "body.arms.right.lower.roll": -1.0, "body.arms.left.lower.roll": -1.0}}
 ]
 
 # Both arms go up beyond belly button, head goes down a bit (body.head.pitch 0.15)

@@ -1,3 +1,7 @@
-﻿Acuro_ID,Sentence_1,Pronoun_1,Sentence_2,Pronoun_2,Sentence_3,Pronoun_3,Sentence_4,Pronoun_4,Sentence_5,Pronoun_5
-0,De jongen heeft een computer. _ heeft een computer,Hij,De jongen heeft een computer. De computer is van _,Hem,De jongen heeft een computer. Dit is _ computer,Zijn,De jongen heeft een computer. Hij zegt: De computer is van _,Mij,De jongen heeft een computer. Hij zegt: Dit is _ computer,Mijn
-1,Het meisje gooit de bal naar de jongen. Zij gooit de bal naar _,Hem,Het meisje gooit de bal naar de jongen. Zij zegt tegen de jongen: Ik gooi de bal naar _,Jou,De bal is van het meisje. Het is _ bal,Haar,De bal is van het meisje. De jongen zegt: Dit is _ bal,Jouw,De bal is van het meisje. Zij zegt: De bal is van _,Mij
+﻿Acuro_ID,Sentence_1,Pronoun_1,Sentence_2,Pronoun_2,Sentence_3,Pronoun_3
+0,De jongen heeft een computer. _ heeft een computer,Hij,De jongen heeft een computer. De computer is van _,Hem,De jongen heeft een computer. Dit is _ computer,Zijn
+1,De jongen is aan het schrijven in een schrift. _ is aan het schrijven in een schrift,Hij,De jongen is aan het schrijven in een schrift. Het schrift is van _,Hem,De jongen is aan het schrijven is een schrift. Het is _ schrift,Zijn
+2,De jongen en meisje gooien de bal naar elkaar. _ spelen samen met de bal,Zij,De jongen en het meisje hebben een bal. De bal is van _,Hen,De jongen en het meisje hebben een bal. Het is _ bal,Hun
+3,Het meisje heeft een kat. _ heeft een kat,Zij,Het meisje heeft een kat. De kat is van _,Haar,Het meisje heeft een kat. Het is _ kat,Haar
+4,De kinderen zijn aan het schaken. _ zijn aan het schaken,Zij,De kinderen hebben een schaakbord. Het schaakbord is van _,Hen,De kinderen hebben een schaakbord. Het is _ schaakbord,Hun
+5,De kinderen zijn aan het vliegeren. _ zijn aan het vliegeren,Zij,De kinderen hebben vliegers. De vliegers zijn van _,Hen,De kinderen hebben vliegers. Het zijn _ vliegers,Hun
