@@ -4,6 +4,7 @@ from twisted.internet.defer import inlineCallbacks
 from autobahn.twisted.util import sleep
 from src.robot_responses.responses import say_normally
 from src.pronoun_game.llm_interface import LLMGameHelper
+from alpha_mini_rug import show_camera_stream
 ARUCO_READING_TIME = 15 #amount of seconds to scan card
 MAX_FAILED_ATTEMPS = 2
 card_scanned = None
@@ -13,9 +14,10 @@ def on_card(frame):
     global card_scanned
     global previous_scanned
     card_scanned = frame['data']['body'][0][5]
+    print(str(card_scanned))
     if card_scanned == previous_scanned:
         card_scanned = None
-        print("Mistake preventedf")
+        print("Mistake prevented")
     else:
         print("Kaart gescand: ", frame['data']['body'][0][5])
 
@@ -25,21 +27,23 @@ def aruco_scan(session):
     global card_scanned
     global previous_scanned
     card_scanned = None
-    yield sleep(0.5)
+    #yield sleep(0.5)
     # Wait until we see a card
     print("Scanning for cards")
     aruco_found = False
-    frame = yield session.call("rie.vision.card.read")
+    _ = yield session.call("rie.vision.card.read")
     yield session.subscribe(on_card, "rie.vision.card.stream")
     yield session.call("rie.vision.card.stream")
-    start_time = yield time.time()
+    start_time = time.time()
     while time.time() - start_time <= ARUCO_READING_TIME:
         yield sleep(0.1)
+        if time.time() - start_time >= 2: #Make it possible to pick same card twice
+            previous_scanned = None
         if card_scanned is not None:
             print("scanned")
             break
     print("done")
-    yield sleep(0.5)
+    #yield sleep(0.5)
     yield session.call("rie.vision.card.close")
     previous_scanned = card_scanned
     return card_scanned

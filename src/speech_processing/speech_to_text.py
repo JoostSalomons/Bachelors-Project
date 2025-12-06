@@ -127,7 +127,7 @@ class SpeechToText:
             elif time.time() - last_sound_time > 3 and speech_detected:  # Kids might speak slower, especially when trying to speak English
                 print("Speech has ended, stopping recording.")
                 break
-            elif time.time() - last_sound_time > 10:
+            elif time.time() - last_sound_time > 20:
                 print("No speech detected at all. Stopped recording")
                 break
 

@@ -24,18 +24,19 @@ client = openai.Client(api_key=API_KEY)
 
 
 class ControlExperiment:
-    def __init__(self, session, version):
+    def __init__(self, session, version, skip_intro):
         self.session = session
         self.version = version
         self.game_helper = LLMGameHelper()
         self.speech_recognition_session = SpeechRecognitionSession(self.session, self.version)
         self.conversation = openai.conversations.create()
+        self.skip_intro = skip_intro
 
 
     @inlineCallbacks
     def control_experiment(self):
-
-        time_limit_seconds = 4 * 60
+        conversation = [[]]
+        time_limit_seconds = 1 * 60
         prompts = [
             "Het kind heeft niet gereageerd op de vraag. Zeg dat je het niet goed hebt gehoord. Herhaal daarna de vraag "
             "of stel een nieuwe vraag."
@@ -46,20 +47,30 @@ class ControlExperiment:
                                                           f"Ik ben een robot. Wat weet jij over robots?",
                                                           self.conversation.id)
         #yield say_animated(self.session, "Hallo. Ik ben de Alpha mini Robot")
+        conversation.append(['', starting_prompt]) #[child_contribution, robot_contribution]
         yield say_animated(self.session, starting_prompt)
-        time_limit_responses = 30
+        time_limit_responses = 1
         start_time = time.time()
         while time.time() - start_time <= time_limit_seconds:
             wait_for_response_time = time.time()
             while (time.time() - wait_for_response_time <= time_limit_responses) and\
                     (time.time() - start_time <= time_limit_seconds):
                 user_input = yield self.speech_recognition_session.recognize_speech()
+                print(1)
                 if user_input is not None:
+                    print(2)
                     yield say_animated(self.session, "Bedankt voor jouw antwoord")
+                    print(3)
                     prompt = yield generate_conversation_using_llm(user_input,self.conversation.id)
+                    conversation.append([user_input, prompt])
                     yield say_animated(self.session, prompt)
                     wait_for_response_time = time.time()
-            print("too long response")
-            conversation_continuation = random.choice(prompts)
-            new_message = yield generate_conversation_using_llm(conversation_continuation, self.conversation.id)
-            yield say_animated(self.session, new_message)
+            if time.time() - start_time <= time_limit_seconds:
+                print("too long response")
+                conversation_continuation = random.choice(prompts)
+                new_message = yield generate_conversation_using_llm(conversation_continuation, self.conversation.id)
+                conversation.append(['', new_message])
+                print(conversation)
+                yield say_animated(self.session, new_message)
+                print("Blub")
+        return conversation
